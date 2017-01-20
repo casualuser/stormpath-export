@@ -34,16 +34,16 @@ from stormpath.error import Error
 CONFIG_FILE = expanduser('~/.stormy')
 VERSION = 'stormpath-export 0.1.2'
 
-
 class StormpathExport(object):
     """Our CLI manager."""
 
-    EXPORTS = ['tenants', 'applications', 'directories', 'groups', 'organizations', 'accounts']
+    EXPORTS = ['accounts']
 
     def __init__(self, base_url):
         """Initialize our Stormpath client, or die tryin' >:)"""
         if exists(CONFIG_FILE):
             credentials = loads(open(CONFIG_FILE, 'r').read())
+            self.directory_id = credentials.get('stormpath_directory_id')
             self.client = Client(api_key={
                 'id': credentials.get('stormpath_api_key_id'),
                 'secret': credentials.get('stormpath_api_key_secret'),
@@ -476,57 +476,48 @@ class StormpathExport(object):
         """Export all account data for this Stormpath account."""
         print('=== Exporting all account data...')
 
-        for account in self.client.tenant.accounts:
+        application = self.client.applications.search({'name': 'Goliath'})[0]
+        accounts = application.accounts.search({'status': 'ENABLED'})
+        tenant = self.get_id(self.client.tenant)
+        for account in accounts:
+            if self.get_id(account.directory) != self.directory_id:
+                print('- Skipping account:', account.email)
+                continue
             print('- Exporting account:', account.email)
 
             json = {
-                'id': self.get_id(account),
-                'href': account.href,
+                #'id': self.get_id(account),
                 'username': account.username,
                 'email': account.email,
-                'fullName': account.full_name,
+                #'fullName': account.full_name,
                 'givenName': account.given_name,
                 'middleName': account.middle_name,
-                'surname': account.surname,
-                'status': account.status,
-                'createdAt': account.created_at.isoformat(),
-                'modifiedAt': account.modified_at.isoformat(),
-                'customData': self.get_custom_data(account),
-                'groups': [],
-                'apiKeys': [],
-                'directory': {
-                    'id': self.get_id(account.directory),
-                    'href': account.directory.href,
-                    'name': account.directory.name,
-                    'description': account.directory.description,
-                    'status': account.directory.status,
-                    'createdAt': account.directory.created_at.isoformat(),
-                    'modifiedAt': account.directory.modified_at.isoformat(),
-                },
+                'surname': account.surname
+                #'createdAt': account.created_at.isoformat(),
+                #'modifiedAt': account.modified_at.isoformat()
             }
 
-            for api_key in account.api_keys:
-                json['apiKeys'].append({
-                    'href': api_key.href,
-                    'id': api_key.id,
-                    'secret': api_key.secret,
-                    #'createdAt': api_key.created_at.isoformat(),
-                    #'modifiedAt': api_key.modified_at.isoformat(),
-                })
+            # for api_key in account.api_keys:
+            #     json['apiKeys'].append({
+            #         'href': api_key.href,
+            #         'id': api_key.id,
+            #         'secret': api_key.secret,
+            #         #'createdAt': api_key.created_at.isoformat(),
+            #         #'modifiedAt': api_key.modified_at.isoformat(),
+            #     })
 
-            for group in account.groups:
-                json['groups'].append({
-                    'id': self.get_id(group),
-                    'href': group.href,
-                    'name': group.name,
-                    'description': group.description,
-                    'status': group.status,
-                    'createdAt': group.created_at.isoformat(),
-                    'modifiedAt': group.modified_at.isoformat(),
-                })
+            # for group in account.groups:
+            #     json['groups'].append({
+            #         'id': self.get_id(group),
+            #         'href': group.href,
+            #         'name': group.name,
+            #         'description': group.description,
+            #         'status': group.status,
+            #         'createdAt': group.created_at.isoformat(),
+            #         'modifiedAt': group.modified_at.isoformat(),
+            #     })
 
-            tenant = self.get_id(self.client.tenant)
-            self.write('%s/%s/accounts/%s' % (self.location, tenant, json['id']), json)
+            self.write('%s/%s/accounts/%s' % (self.location, tenant, json['username']), json)
 
         print('=== Done!\n')
 
@@ -561,6 +552,7 @@ def configure():
         api_key_id = input('Enter your API Key ID: ').strip()
         api_key_secret = input('Enter your API Key Secret: ').strip()
         base_url = input('Enter your Base URL (optional): ').strip()
+        directory_id = input('Enter your Directory ID: ').strip()
         if not (api_key_id or api_key_secret):
             print('\nNot sure how to find your Stormpath API credentials?')
             print('Log into your Stormpath account, then visit your dashboard and use the "Manage Existing Keys" link.\n')
@@ -581,7 +573,8 @@ def configure():
                 stormycfg.write(dumps({
                     'stormpath_api_key_id': api_key_id,
                     'stormpath_api_key_secret': api_key_secret,
-                    'stormpath_base_url': base_url or None
+                    'stormpath_base_url': base_url or None,
+                    'stormpath_directory_id': directory_id
                 }, indent=2, sort_keys=True))
 
             # Make the stormy configuration file only accessible to the current
