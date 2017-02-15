@@ -517,7 +517,7 @@ class StormpathExport(object):
             #         'modifiedAt': group.modified_at.isoformat(),
             #     })
 
-            self.write('%s/%s/accounts/%s' % (self.location, tenant, json['username']), json)
+            self.write(('{}/{}/accounts/{}/{}/{}/{}').format(self.location, tenant, json['givenName'].lower(), json['email'].split('@')[1], json['username'].lower()[:3], json['username']), json)
 
         print('=== Done!\n')
 
