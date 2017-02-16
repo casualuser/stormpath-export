@@ -8,7 +8,7 @@ Easily export your Stormpath (https://stormpath.com/) user data.
 Usage:
   stormpath-export configure
   stormpath-export [(<location> | -l <location> | --location <location>) (-b <base_url> | --base-url <base_url>) (-a <app_name> | --application-name <app_name> [default: Goliath])]
-  stormpath-export [(-b <base_url> | --base-url <base_url>) (-a <app_name> | --application-name <app_name> [default: Goliath])]
+  stormpath-export [(-b <base_url> | --base-url <base_url>) (-a <app_name> | --application-name <app_name>)[default: 'Goliath']]
   stormpath-export (-h | --help)
   stormpath-export --version
 
@@ -101,6 +101,17 @@ class StormpathExport(object):
 
         return location
 
+    def set_app_name(self, app_name):
+        """
+        Return the proper app_name used to export our JSON data.
+
+        :param str app_name: The app_name to backup
+        """
+        if not app_name:
+            app_name = 'Goliath'
+
+        return app_name
+
     def write(self, file, data):
         """
         Write JSON data to the specified file.
@@ -116,7 +127,7 @@ class StormpathExport(object):
         with open(file + '.json', 'w') as file:
             file.write(dumps(data, indent=2, separators=(',', ': '), sort_keys=True))
 
-    def export_tenants(self):
+    def export_tenants(self, app_name):
         """Export all tenant data for this Stormpath account."""
         print('\n=== Exporting all tenant data...')
 
@@ -140,7 +151,7 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export_applications(self):
+    def export_applications(self, app_name):
         """Export all application data for this Stormpath account."""
         print('\n=== Exporting all application data...')
 
@@ -205,7 +216,7 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export_directories(self):
+    def export_directories(self, app_name):
         """Export all directory data for this Stormpath account."""
         print('=== Exporting all directory data...')
 
@@ -359,7 +370,7 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export_organizations(self):
+    def export_organizations(self, app_name):
         """Export all organization data for this Stormpath account."""
         print('\n=== Exporting all organization data...')
 
@@ -424,7 +435,7 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export_groups(self):
+    def export_groups(self, app_name):
         """Export all group data for this Stormpath account."""
         print('=== Exporting all group data...')
 
@@ -472,11 +483,11 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export_accounts(self):
+    def export_accounts(self, app_name):
         """Export all account data for this Stormpath account."""
         print('=== Exporting all account data...')
 
-        application = self.client.applications.search({'name': 'Goliath'})[0]
+        application = self.client.applications.search({'name': app_name})[0]
         accounts = application.accounts.search({'status': 'ENABLED'})
         tenant = self.get_id(self.client.tenant)
         for account in accounts:
@@ -521,7 +532,7 @@ class StormpathExport(object):
 
         print('=== Done!\n')
 
-    def export(self, location=None):
+    def export(self, location=None, app_name='Goliath'):
         """
         Export all Stormpath data to the disk, in JSON format.
 
@@ -531,10 +542,11 @@ class StormpathExport(object):
             a folder).
         """
         self.location = self.set_location(location)
+        self.app_name = self.set_app_name(app_name)
 
         # Export all Stormpath data.
         for export_type in self.EXPORTS:
-            getattr(self, 'export_' + export_type)()
+            getattr(self, 'export_' + export_type)(app_name)
 
 
 def configure():
@@ -597,8 +609,7 @@ def main():
         return
 
     exporter = StormpathExport(arguments['<base_url>'])
-    exporter.export(arguments['<location>'])
-
+    exporter.export(arguments['<location>'], arguments['<app_name>'])
 
 if __name__ == '__main__':
     main()
