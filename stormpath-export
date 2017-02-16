@@ -7,8 +7,8 @@ Easily export your Stormpath (https://stormpath.com/) user data.
 
 Usage:
   stormpath-export configure
-  stormpath-export [(<location> | -l <location> | --location <location>) (-b <base_url> | --base-url <base_url>)]
-  stormpath-export [(-b <base_url> | --base-url <base_url>)]
+  stormpath-export [(<location> | -l <location> | --location <location>) (-b <base_url> | --base-url <base_url>) (-a <app_name> | --application-name <app_name> [default: Goliath])]
+  stormpath-export [(-b <base_url> | --base-url <base_url>) (-a <app_name> | --application-name <app_name> [default: Goliath])]
   stormpath-export (-h | --help)
   stormpath-export --version
 
@@ -480,9 +480,9 @@ class StormpathExport(object):
         accounts = application.accounts.search({'status': 'ENABLED'})
         tenant = self.get_id(self.client.tenant)
         for account in accounts:
-            if self.get_id(account.directory) != self.directory_id:
-                print('- Skipping account:', account.email)
-                continue
+#            if self.get_id(account.directory) = self.directory_id:
+#                print('- Skipping account:', account.email)
+#                continue
             print('- Exporting account:', account.email)
 
             json = {
