@@ -496,6 +496,10 @@ class StormpathExport(object):
         accounts = application.accounts.search({'status': 'ENABLED'})
         tenant = self.get_id(self.client.tenant)
         for account in accounts:
+            if self.get_id(account.directory) != self.directory_id:
+                print('- Skipping account in another directory:', account.email)
+                continue
+
             json = {
                 #'id': self.get_id(account),
                 'username': account.username,
@@ -534,7 +538,7 @@ class StormpathExport(object):
                 print('- Exporting account:', account.email)
                 self.write(export_path, json)
             else:
-                print('- Skipping account:', account.email)
+                print('- Skipping exported account:', account.email)
 
         print('=== Done!\n')
 
