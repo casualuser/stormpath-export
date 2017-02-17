@@ -547,7 +547,7 @@ class StormpathExport(object):
             a folder).
         """
         self.location = self.set_location(location)
-        self.app_name = self.set_app_name(app_name)
+        app_name = self.app_name = self.set_app_name(app_name)
 
         # Export all Stormpath data.
         for export_type in self.EXPORTS:
