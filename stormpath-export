@@ -487,7 +487,12 @@ class StormpathExport(object):
         """Export all account data for this Stormpath account."""
         print('=== Exporting all account data...')
 
-        application = self.client.applications.search({'name': app_name})[0]
+        if not self.client.applications.search({'name': app_name}):
+            print('- Application with name ', app_name, ' not found')
+            exit()
+        else:
+            application = self.client.applications.search({'name': app_name})[0]
+
         accounts = application.accounts.search({'status': 'ENABLED'})
         tenant = self.get_id(self.client.tenant)
         for account in accounts:
