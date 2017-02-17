@@ -28,7 +28,7 @@ from sys import exit
 from docopt import docopt
 from stormpath.client import Client
 from stormpath.error import Error
-
+from re import sub
 
 ##### GLOBALS
 CONFIG_FILE = expanduser('~/.stormy')
@@ -88,6 +88,14 @@ class StormpathExport(object):
             return resource.href.split('/')[-1]
         except AttributeError:
             return resource['href'].split('/')[-1]
+
+    def get_email(self, email):
+        """
+        Given a Stormpath Resource, we'll extract the resource ID.
+
+        :param string email: Account email
+        """
+        return sub('[^a-zA-Z0-9-_*.@]', '', email)
 
     def set_location(self, location):
         """
@@ -464,11 +472,12 @@ class StormpathExport(object):
             }
 
             for account in group.accounts:
+                self.email = self.get_email(account.email)
                 json['accounts'].append({
                     'id': self.get_id(account),
                     'href': account.href,
                     'username': account.username,
-                    'email': account.email,
+                    'email': self.email,
                     'fullName': account.full_name,
                     'givenName': account.given_name,
                     'middleName': account.middle_name,
@@ -496,14 +505,15 @@ class StormpathExport(object):
         accounts = application.accounts.search({'status': 'ENABLED'})
         tenant = self.get_id(self.client.tenant)
         for account in accounts:
+            self.email = self.get_email(account.email)
             if self.get_id(account.directory) != self.directory_id:
-                print('- Skipping account in another directory:', account.email)
+                print('- Skipping account in another directory:', self.email)
                 continue
 
             json = {
                 #'id': self.get_id(account),
                 'username': account.username,
-                'email': account.email,
+                'email': self.email,
                 #'fullName': account.full_name,
                 'givenName': account.given_name,
                 'middleName': account.middle_name,
@@ -535,10 +545,10 @@ class StormpathExport(object):
             export_path = ('{}/{}/accounts/{}/{}/{}/{}').format(self.location, tenant, json['givenName'].lower(), json['email'].split('@')[1], json['username'].lower()[:3], json['username'])
 
             if not exists(export_path + '.json'):
-                print('- Exporting account:', account.email)
+                print('- Exporting account:', self.email)
                 self.write(export_path, json)
             else:
-                print('- Skipping exported account:', account.email)
+                print('- Skipping exported account:', self.email)
 
         print('=== Done!\n')
 
