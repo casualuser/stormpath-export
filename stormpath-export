@@ -95,7 +95,10 @@ class StormpathExport(object):
 
         :param string email: Account email
         """
-        return sub('[^a-zA-Z0-9-_*.@]', '', email)
+
+        # use 99.99% working e-mail regex from http://emailregex.com
+
+        return sub('[^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$]', '', email)
 
     def set_location(self, location):
         """
